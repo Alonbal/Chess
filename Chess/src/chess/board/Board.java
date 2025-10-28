@@ -124,7 +124,7 @@ public class Board {
 	
 	public boolean checkmate(boolean whiteMates) {
 		if (this.check(whiteMates) && this.noLegalMove(!whiteMates)) {
-			this.noLegalMoveDebug(!whiteMates);
+			// this.noLegalMoveDebug(!whiteMates);
 			return true;
 		}
 		return false;
@@ -181,3 +181,4 @@ public class Board {
 	}
 	
 }
+
