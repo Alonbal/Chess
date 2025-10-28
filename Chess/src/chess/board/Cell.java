@@ -1,4 +1,5 @@
 package chess.board;
+import java.util.AbstractSequentialList;
 import java.util.Iterator;
 import chess.pieces.*;
 
@@ -80,18 +81,32 @@ public class Cell {
 	}
 	
 	public boolean threatenedCell(boolean whiteMoves) {
-		Iterator<Piece> iter = whiteMoves ? board.WhitePieces.iterator() : board.BlackPieces.iterator();
+		Piece backup = piece;
+		this.empty();
+		
+		Iterator<Piece> iter = whiteMoves ? ((AbstractSequentialList<Piece>) board.WhitePieces.clone()).iterator() : ((AbstractSequentialList<Piece>) board.BlackPieces.clone()).iterator();
 		while (iter.hasNext()) {
 			Piece piece = iter.next();
 			Cell cell = piece.getCell();
+			
 			if (piece instanceof king) {
-				if (Math.abs(cell.getCol() - col) <= 1 && Math.abs(cell.getRow() - row) <= 1) return true;
+				if (Math.abs(cell.getCol() - col) <= 1 && Math.abs(cell.getRow() - row) <= 1) {
+					this.assign(backup);
+					return true;
+				}
 			}
 			else if (piece instanceof pawn) {
-				if (((pawn)piece).regularCapture(this)) return true;
+				if (((pawn)piece).regularCapture(this)) {
+					this.assign(backup);
+					return true;
+				}
 			}
-			else if (piece.isLegalMove(this)) return true;
+			else if (piece.isLegalMove(this)) {
+				this.assign(backup);
+				return true;
+			}
 		}
+		this.assign(backup);
 		return false;
 	}
 	

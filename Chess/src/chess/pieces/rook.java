@@ -36,8 +36,8 @@ public class rook extends Piece {
 		return moved;
 	}
 	
-	public void setMoved() {
-		moved = true;
+	public void setMoved(boolean moved) {
+		this.moved = moved;
 	}
 
 }

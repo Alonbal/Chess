@@ -81,15 +81,17 @@ public abstract class Piece {
 		return false;
 	}
 	
-	boolean moveCausesCheck(Cell target) {
+	public boolean moveCausesCheck(Cell target) {
 		if (!this.isLegalMove(target)) return true;
 		if (this instanceof king) return target.threatenedCell(!isWhite);		//castling cannot cause checked position
+		boolean moved = false;
 		
 		//backups for undoing move
 		Cell original_cell = cell;
 		Piece captured = target.getPiece();
 		Cell en_passant_cell = cell.board.enPassantPossible;
 		Piece en_passant_backup = this.isEnPassant(target) ? target.board.enPassantPossible.getPiece() : null;
+		if (this instanceof rook) moved = ((rook)this).getMoved();
 		
 		cell.board.Move(cell, target);
 		boolean res = cell.board.check(!isWhite) ? true : false;
@@ -98,6 +100,7 @@ public abstract class Piece {
 		target.assign(captured);
 		if (en_passant_cell != null) cell.board.enPassantPossible = en_passant_cell;
 		if (en_passant_backup != null) en_passant_cell.assign(en_passant_backup);
+		if (this instanceof rook) ((rook)this).setMoved(moved);
 		/*
 		if (is_castle) {		//undoing castle, already unmoved king - rook remaining
 			

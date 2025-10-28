@@ -4,98 +4,123 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
 import java.util.Scanner;
+
+import javax.swing.SwingUtilities;
+
 import chess.board.*;
 import chess.pieces.Piece;
 import chess.pieces.pawn;
+import chess.ui.ChessUI;
 
 public class Game {
 	
-	static final Board board = new Board();
+	final Board board = new Board();
+	private static ChessUI ui;
+	
 
 	public static void main(String[] args) {
-		
-		// run with no input to play, add any input to analyze a game
+		// run with no input to play with UI
 		if (args.length == 0) {
-			
-			Scanner in = new Scanner(System.in);
-			String strFrom, strTo;
-			Cell from, to;
-			
-			while (true) {
-				System.out.println(board);
-				
-				// if there is no legal move to play, game is over
-				if (board.noLegalMove(board.isWhiteToMove())) break;
-				// check if player is checked
-				if (board.check(!board.isWhiteToMove())) System.out.println("Check!");
-				
-				printMoveInstruction();
-				
-				// get a legal move order from player
-				while (true) {
-					strFrom = in.nextLine();
-					strTo = in.nextLine();
-					if (getLegalMove(strFrom, strTo)) break;
-				}
-				
-				from = parse(strFrom);
-				to = parse(strTo);
-				
-				board.Move(from, to);
-				
-				// promotion
-				handlePromotion(from, to, in);
-			}
-			
-			in.close();
-			
-			if (board.check(!board.isWhiteToMove())) {
-				System.out.println("Checkmate!");
-				if (board.isWhiteToMove()) System.out.println("Black won."); 
-				else System.out.println("White won.");
-			}
-			
-			else System.out.println("Stalemate.");
+			SwingUtilities.invokeLater(() -> {
+            Game game = new Game(); // your logic
+            ui = new ChessUI(game);
+        });
 		}
 		
-		else {
-			Scanner in;
-			try {
-				in = new Scanner(new File("./games.txt"));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				return;
-			}
-			
-			in.useDelimiter(" ");
-			String str = null;
-			
-			while (in.hasNext()) {
-				
-				str = in.next();
-
-				if (isResult(str)) break;
-				if (str.contains(".")) str = (str.split("\\.", 2))[1];
-				
-				if (str.contains("+")) str = str.split("\\+", 2)[0];
-				if (str.contains("#")) str = str.split("#", 2)[0];
-						
-				Cell from = parsePGN(str)[0];
-				Cell to = parsePGN(str)[1];
-				
-				board.Move(from, to);
-				
-				if (isPromotion(str)) board.promote(to, str.charAt(str.length()-1));
-								
-			}
-			
-			printResult(str);
-			in.close();
-		}
 		
+		// run with input of length 1 to play over terminal
+		else if (args.length == 1) (new Game()).playOnTerminal();
+		// run with input of length > 1 to analyze a game saved as a PGN file in games.txt
+		else (new Game()).analyzeGame();
 	}
 	
-	public static Cell parse(String turn) {
+	public static void restartGame() {
+        ui.dispose(); // close the current window
+
+        SwingUtilities.invokeLater(() -> {
+            Game newGame = new Game();
+            ui = new ChessUI(newGame);
+        });
+	}
+	
+	public void playOnTerminal() {
+		Scanner in = new Scanner(System.in);
+		String strFrom, strTo;
+		Cell from, to;
+		
+		while (true) {
+			System.out.println(board);
+			
+			// if there is no legal move to play, game is over
+			if (board.noLegalMove(board.isWhiteToMove())) break;
+			// check if player is checked
+			if (board.check(!board.isWhiteToMove())) System.out.println("Check!");
+			
+			printMoveInstruction();
+			
+			// get a legal move order from player
+			while (true) {
+				strFrom = in.nextLine();
+				strTo = in.nextLine();
+				if (getLegalMove(strFrom, strTo)) break;
+			}
+			
+			from = strToCell(strFrom);
+			to = strToCell(strTo);
+			
+			board.Move(from, to);
+			
+			// promotion
+			handlePromotion(from, to, in);
+		}
+		
+		in.close();
+		
+		if (board.check(!board.isWhiteToMove())) {
+			System.out.println("Checkmate!");
+			if (board.isWhiteToMove()) System.out.println("Black won."); 
+			else System.out.println("White won.");
+		}
+		
+		else System.out.println("Stalemate.");
+	}
+	
+	public void analyzeGame() {
+		Scanner in;
+		try {
+			in = new Scanner(new File("./games.txt"));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		in.useDelimiter(" ");
+		String str = null;
+		
+		while (in.hasNext()) {
+			
+			str = in.next();
+
+			if (isResult(str)) break;
+			if (str.contains(".")) str = (str.split("\\.", 2))[1];
+			
+			if (str.contains("+")) str = str.split("\\+", 2)[0];
+			if (str.contains("#")) str = str.split("#", 2)[0];
+					
+			Cell from = parsePGN(str)[0];
+			Cell to = parsePGN(str)[1];
+			
+			board.Move(from, to);
+			
+			if (isPromotion(str)) board.promote(to, str.charAt(str.length()-1));
+							
+		}
+		
+		printResult(str);
+		in.close();
+	}
+	
+	public Cell strToCell(String turn) {
 		if (turn == null) return null;
 		if (turn.length() != 2) return null;
 		
@@ -106,10 +131,11 @@ public class Game {
 		return board.board[row][col];
 	}
 
-	public static boolean getLegalMove(String strFrom, String strTo) {
-		
-		Cell from = parse(strFrom);
-		Cell to = parse(strTo);
+	public boolean getLegalMove(String strFrom, String strTo) {
+		return getLegalMove(strToCell(strFrom), strToCell(strTo));
+	}
+	
+	public boolean getLegalMove(Cell from, Cell to) {
 		
 		if (from == null || to == null) {
 			System.out.println("Wrong input. Try again.");
@@ -135,7 +161,7 @@ public class Game {
 		return true;
 	}
 	
-	public static Cell[] parsePGN(String turn) {
+	public Cell[] parsePGN(String turn) {
 		
 		Cell[] res = new Cell[2];
 		res[1] = getTargetCell(turn);
@@ -143,14 +169,14 @@ public class Game {
 		LinkedList<Piece> iter = board.getPiecesList(board.isWhiteToMove());
 				
 		if (turn.contains("O-O-O") || turn.contains("0-0-0")) {
-			res[0] = board.isWhiteToMove() ? parse("e1") : parse("e8");
-			res[1] = board.isWhiteToMove() ? parse("c1") : parse("c8");
+			res[0] = board.isWhiteToMove() ? strToCell("e1") : strToCell("e8");
+			res[1] = board.isWhiteToMove() ? strToCell("c1") : strToCell("c8");
 			return res;
 		}
 		
 		if (turn.contains("O-O") || turn.contains("0-0")) {
-			res[0] = board.isWhiteToMove() ? parse("e1") : parse("e8");
-			res[1] = board.isWhiteToMove() ? parse("g1") : parse("g8");
+			res[0] = board.isWhiteToMove() ? strToCell("e1") : strToCell("e8");
+			res[1] = board.isWhiteToMove() ? strToCell("g1") : strToCell("g8");
 			return res;
 		}
 		
@@ -177,7 +203,7 @@ public class Game {
 		return s.contains("=");
 	}
 	
-	public static void printResult(String res) {
+	public void printResult(String res) {
 		System.out.println(board);
 		if (res == null) System.out.println("No input.");
 		
@@ -193,7 +219,7 @@ public class Game {
 		else System.out.println("Invalid result.");
 	}
 	
-	public static Cell getTargetCell(String turn) {
+	public Cell getTargetCell(String turn) {
 			
 		char col, row;
 		String res = "";
@@ -210,7 +236,7 @@ public class Game {
 		
 		res = ("" + col) + row;
 		
-		return parse(res);
+		return strToCell(res);
 	}
 	
 	public static boolean isResult(String res) {
@@ -243,12 +269,12 @@ public class Game {
 		return containsFromCell(turn, '1', '8');
 	}
 	
-	private static void printMoveInstruction() {
+	private void printMoveInstruction() {
 		if (board.isWhiteToMove()) System.out.println("White's turn: move piece from _ to _");
 		else System.out.println("Black's turn: move piece from _ to _");
 	}
 	
-	private static void handlePromotion(Cell from, Cell to, Scanner in) {
+	private void handlePromotion(Cell from, Cell to, Scanner in) {
 		if (to.getPiece() instanceof pawn && (to.getRow() == 0 || to.getRow() == 7)) {		
 			System.out.println("Promotion! Enter Q for queen, R for rook, N for knight, B for bishop");
 			String choice = in.nextLine();

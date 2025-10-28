@@ -30,8 +30,11 @@ public class king extends Piece {
 	
 	@Override
 	public boolean isCastle(Cell target) {
+		
 		if (this.moved) return false;
+		
 		if (target.getRow() != this.cell.getRow()) return false;
+
 		Cell rooks_cell, rooks_target_cell;
 		if (this.cell.getCol() - target.getCol() == 2) {		//castle to the left AKA queenside AKA long castling
 			rooks_cell = cell.board.board[cell.getRow()][0];
@@ -42,25 +45,24 @@ public class king extends Piece {
 			rooks_target_cell = cell.board.board[cell.getRow()][cell.getCol() + 1];
 		}
 		else return false;
+
 		if (rooks_cell.isEmpty()) return false;
+
 		if (!(rooks_cell.getPiece() instanceof rook)) return false;
+
 		rook R = (rook)rooks_cell.getPiece();
 		if (R.moved) return false;
+
 		if (R.isBlocked(cell)) return false;
+	
 		if (cell.threatenedCell(!isWhite) || target.threatenedCell(!isWhite) || 
 				rooks_target_cell.threatenedCell(!isWhite)) return false;
-		
+
 		return true;
 	}
 
 	@Override
 	boolean isBlocked(Cell target) {
-		/*Iterator<Piece> iter;
-		if (isWhite) iter = target.board.BlackPieces.iterator();
-		else iter = target.board.WhitePieces.iterator();
-		while (iter.hasNext()) {
-			if (iter.next().isChecking()) return true;
-		}*/
 		return false;
 	}
 	
@@ -68,8 +70,8 @@ public class king extends Piece {
 		return moved;
 	}
 
-	public void setMoved() {
-		moved = true;
+	public void setMoved(boolean moved) {
+		this.moved = moved;
 	}
 
 }

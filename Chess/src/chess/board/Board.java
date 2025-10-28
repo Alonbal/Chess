@@ -1,4 +1,6 @@
 package chess.board;
+import java.util.AbstractSequentialList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import chess.pieces.*;
 
@@ -85,45 +87,50 @@ public class Board {
 	}
 	
 	public boolean noLegalMove(boolean whiteMoves) {
-		/*
-		for (int i = 0; i < 8; i++) {
-			for (int j = 0; j < 8; j++) {
-				if ((!board[i][j].isEmpty) && (board[i][j].piece.isWhite == whiteMoves)) {
-					Piece piece = board[i][j].piece;
-					for (int k = 0; k < 8; k++) {
-						for (int l = 0; l < 8; l++) {
-							if (piece.prepareToMove(board[k][l])) return false;
-						}
+		Iterator<Piece> iter = whiteMoves ? ((LinkedList<Piece>) WhitePieces.clone()).iterator() : ((LinkedList<Piece>) BlackPieces.clone()).iterator();
+		
+		while (iter.hasNext()) {
+			Piece piece = iter.next();
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					if (piece.prepareToMove(board[i][j])) return false;
+				}
+			}
+		}
+		
+		return true;
+		
+	}
+	
+	private void noLegalMoveDebug(boolean whiteMoves) {
+		Iterator<Piece> iter = whiteMoves ? ((LinkedList<Piece>) WhitePieces.clone()).iterator() : ((LinkedList<Piece>) BlackPieces.clone()).iterator();
+		
+		while (iter.hasNext()) {
+			Piece piece = iter.next();
+			System.out.println(piece.toString() + " in row " + piece.getCell().getRow() + " col " + piece.getCell().getRow());
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					if (piece.prepareToMove(board[i][j])) {
+						System.out.println("can move to row " + i + " col " + j);
+						//if (!board[i][j].threatenedCell(piece.isWhite())) board[i][j].threatenedCellDebug(whiteMoves);
+						return;
 					}
 				}
 			}
 		}
 		
-		return true;
-		*/
 		
-		LinkedList<Piece> iter = whiteMoves ? WhitePieces : BlackPieces;
-		int n = iter.size();
-		
-		for (int ind = 0; ind < n; ind++) {
-			Piece piece = iter.getFirst();
-			for (int i = 0; i < 8; i++) {
-				for (int j = 0; j < 8; j++) {
-					if (piece.prepareToMove(board[i][j])) return false;
-					if (iter.getFirst() == piece) iter.add(iter.removeFirst());
-				}
-			}
+	}
+	
+	public boolean checkmate(boolean whiteMates) {
+		if (this.check(whiteMates) && this.noLegalMove(!whiteMates)) {
+			this.noLegalMoveDebug(!whiteMates);
+			return true;
 		}
-		
-		return true;
-		
+		return false;
 	}
 	
-	boolean checkmate(boolean whiteMates) {
-		return this.check(whiteMates) && this.noLegalMove(!whiteMates);
-	}
-	
-	boolean stalemate() {
+	public boolean stalemate() {
 		return this.noLegalMove(whiteToMove) && (!this.check(!whiteToMove));
 	}
 	
@@ -137,8 +144,8 @@ public class Board {
 			this.castle(to.col > from.col);
 			return;
 		}
-		if (from.piece instanceof king) ((king)from.piece).setMoved(); 
-		if (from.piece instanceof rook) ((rook)from.piece).setMoved();
+		if (from.piece instanceof king) ((king)from.piece).setMoved(true); 
+		if (from.piece instanceof rook) ((rook)from.piece).setMoved(true);
 		
 		to.assign(from.empty());
 		whiteToMove = !whiteToMove;
@@ -156,15 +163,15 @@ public class Board {
 		king_target_cell.assign(K.getCell().empty());
 		rook_target_cell.assign(rook_original_cell.empty());
 		
-		K.setMoved();
-		((rook)rook_target_cell.piece).setMoved();
+		K.setMoved(true);
+		((rook)rook_target_cell.piece).setMoved(true);
 		
 		whiteToMove = !whiteToMove;
 	}
 	
 	public void promote(Cell in, char choice) {	//choices are Q,R,N,B
 		if (choice == 'Q') in.assign(new queen(in.piece.isWhite()));
-		else if (choice == 'R') { in.assign(new rook(in.piece.isWhite())); ((rook)in.piece).setMoved();}
+		else if (choice == 'R') { in.assign(new rook(in.piece.isWhite())); ((rook)in.piece).setMoved(true);}
 		else if (choice == 'N') in.assign(new knight(in.piece.isWhite()));
 		else in.assign(new bishop(in.piece.isWhite()));
 	}
